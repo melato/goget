@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -67,17 +68,27 @@ func (t *App) FindProject(pkg string) *Project {
 	return nil
 }
 
+func (t *App) host(r *http.Request) string {
+	host := r.Host
+	i := strings.Index(host, ":")
+	if i >= 0 {
+		return host[0:i]
+	}
+	return host
+}
+
 func (t *App) Handle(w http.ResponseWriter, r *http.Request) error {
 	url, err := url.ParseRequestURI(r.RequestURI)
 	if err != nil {
 		return err
 	}
-	pkg := r.Host + url.Path
+	host := t.host(r)
+	pkg := host + url.Path
+	fmt.Println(pkg)
 	project := t.FindProject(pkg)
 	if project == nil {
 		return errors.New("no such package: " + pkg)
 	}
-	fmt.Println(project.Repository)
 	var tpl *template.Template
 	if t.Template != "" {
 		tpl, err = template.ParseFiles(t.Template)
