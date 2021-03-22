@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title>{{.Package}}</title>
 <meta name="go-import" content="{{.Package}} git {{.Repository}}">
 </head>
 <body>
