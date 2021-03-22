@@ -1,18 +1,25 @@
 package project
 
 import (
+	_ "embed"
+	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
+	"net/url"
 	"os"
 
-	"github.com/gorilla/mux"
 	"gopkg.in/yaml.v2"
 )
+
+//go:embed view/project.tpl
+var projectTemplate string
 
 type App struct {
 	Trace        bool
 	Port         int    `name :"port" usage:"port to listen to"`
 	ProjectsFile string `name:"f" usage:"projects file (.yaml)"`
+	Template     string `name:"template" usage:"template file"`
 	projects     []*Project
 }
 
@@ -36,20 +43,72 @@ func (t *App) Configured() error {
 	return nil
 }
 
+func PrintYaml(v interface{}) {
+	data, err := yaml.Marshal(v)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
+	os.Stdout.Write(data)
+	fmt.Println()
+}
+
 func (t *App) List() {
 	for _, p := range t.projects {
-		fmt.Println(p.Dir)
+		fmt.Println(p.Package)
 	}
 }
 
-func (t *App) Handler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	fmt.Println(vars)
+func (t *App) FindProject(pkg string) *Project {
+	for _, p := range t.projects {
+		if pkg == p.Package {
+			return p
+		}
+	}
+	return nil
+}
+
+func (t *App) Handle(w http.ResponseWriter, r *http.Request) error {
+	url, err := url.ParseRequestURI(r.RequestURI)
+	if err != nil {
+		return err
+	}
+	pkg := r.Host + url.Path
+	project := t.FindProject(pkg)
+	if project == nil {
+		return errors.New("no such package: " + pkg)
+	}
+	fmt.Println(project.Repository)
+	var tpl *template.Template
+	if t.Template != "" {
+		tpl, err = template.ParseFiles(t.Template)
+	} else {
+		tpl = template.New("project")
+		tpl, err = tpl.Parse(projectTemplate)
+	}
+	if err != nil {
+		return err
+	}
+	data := make(map[string]interface{})
+	data["project"] = project
+	return tpl.Execute(w, data)
+}
+
+func (t *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	err := t.Handle(w, r)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), 404)
+
+	}
 }
 
 func (t *App) Server() error {
-	r := mux.NewRouter()
-	r.HandleFunc("/{p}", t.Handler)
 	addr := fmt.Sprintf(":%d", t.Port)
-	return http.ListenAndServe(addr, r)
+	fmt.Println(addr)
+	return http.ListenAndServe(addr, t)
+}
+
+func (t *App) PrintTemplate() {
+	fmt.Println(len(projectTemplate))
+	fmt.Println(projectTemplate)
 }
