@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="go-import" content="{{.project.Package}} git {{.project.Repository}}">
+<meta name="go-import" content="{{.Package}} git {{.Repository}}">
 </head>
 <body>
-go get {{.project.Package}}
+<div>go get {{.Package}}</div>
+<div>repository: {{.Repository}}</div>
 </body>
 </html>

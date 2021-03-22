@@ -99,9 +99,7 @@ func (t *App) Handle(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	data := make(map[string]interface{})
-	data["project"] = project
-	return tpl.Execute(w, data)
+	return tpl.Execute(w, project)
 }
 
 func (t *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
