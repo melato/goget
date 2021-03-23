@@ -106,7 +106,7 @@ func (t *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := t.Handle(w, r)
 	if err != nil {
 		fmt.Println(err)
-		http.Error(w, err.Error(), 404)
+		http.Error(w, "", 404)
 
 	}
 }
