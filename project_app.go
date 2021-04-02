@@ -64,6 +64,9 @@ func (t *App) FindProject(pkg string) *Project {
 		if pkg == p.Package {
 			return p
 		}
+		if strings.HasPrefix(pkg, p.Package) && pkg[len(p.Package)] == '/' {
+			return p
+		}
 	}
 	return nil
 }
