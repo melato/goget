@@ -1,16 +1,17 @@
-package project
+package goget
 
 import (
 	_ "embed"
-	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v2"
+	"melato.org/goget/util"
 )
 
 //go:embed view/project.tpl
@@ -21,7 +22,9 @@ type App struct {
 	Port         int    `name :"port" usage:"port to listen to"`
 	ProjectsFile string `name:"f" usage:"projects file (.yaml)"`
 	Template     string `name:"template" usage:"template file"`
-	projects     []*Project
+	modTime      time.Time
+	projects     map[string]*Project
+	queue     *util.Get[string, *Project]
 }
 
 func (t *App) Init() error {
@@ -29,28 +32,36 @@ func (t *App) Init() error {
 	return nil
 }
 
-func (t *App) Configured() error {
-	if t.ProjectsFile != "" {
-		data, err := os.ReadFile(t.ProjectsFile)
-		if err != nil {
-			return err
-		}
+func (t *App) LoadProjects() error {
+	st, err := os.Stat(t.ProjectsFile)
+	if err != nil {
+		return err
+	}
+	modTime := st.ModTime()
+	if !modTime.After(t.modTime) {
+		return nil
+	}
+	data, err := os.ReadFile(t.ProjectsFile)
+	if err != nil {
+		return err
+	}
 
-		err = yaml.Unmarshal(data, &t.projects)
-		if err != nil {
-			return err
-		}
+	var projects []*Project
+	err = yaml.Unmarshal(data, &projects)
+	if err != nil {
+		return err
+	}
+	t.projects = make(map[string]*Project)
+	for _, p := range projects {
+		t.projects[p.Package] = p
 	}
 	return nil
 }
 
-func PrintYaml(v interface{}) {
-	data, err := yaml.Marshal(v)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
-	os.Stdout.Write(data)
-	fmt.Println()
+func (t *App) Configured() error {
+	t.queue = util.NewGet(t.FindProject)
+	err := t.LoadProjects()
+	return err
 }
 
 func (t *App) List() {
@@ -60,15 +71,10 @@ func (t *App) List() {
 }
 
 func (t *App) FindProject(pkg string) *Project {
-	for _, p := range t.projects {
-		if pkg == p.Package {
-			return p
-		}
-		if strings.HasPrefix(pkg, p.Package) && pkg[len(p.Package)] == '/' {
-			return p
-		}
+	if t.LoadProjects() != nil {
+		return nil
 	}
-	return nil
+	return t.projects[pkg]
 }
 
 func (t *App) host(r *http.Request) string {
@@ -87,10 +93,11 @@ func (t *App) Handle(w http.ResponseWriter, r *http.Request) error {
 	}
 	host := t.host(r)
 	pkg := host + url.Path
+	pkg = strings.TrimSuffix(pkg, "/")
 	fmt.Println(pkg)
-	project := t.FindProject(pkg)
+	project := t.queue.Get(pkg)
 	if project == nil {
-		return errors.New("no such package: " + pkg)
+		return fmt.Errorf("no such package: %s", pkg)
 	}
 	var tpl *template.Template
 	if t.Template != "" {

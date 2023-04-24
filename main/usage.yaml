@@ -1,0 +1,11 @@
+short: simple go-get server
+long: |
+  Implements an HTTP server that provides information about the location of
+  git repositories for git packages.
+  This allows you to create public Go packages with your own domain,
+  which are hosted on another domain (such as github.com).
+commands:
+  server:
+    short: run the web server
+  version:
+    short: print program version

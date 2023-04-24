@@ -1,4 +1,4 @@
-package project
+package goget
 
 type Project struct {
 	Package    string `yaml:"package"`
