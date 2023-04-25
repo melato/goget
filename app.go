@@ -16,8 +16,8 @@ import (
 	"melato.org/goget/util"
 )
 
-//go:embed view/project.tpl
-var projectTemplate string
+//go:embed view/module.tpl
+var defaultTemplate string
 
 type App struct {
 	Trace      bool
@@ -26,8 +26,8 @@ type App struct {
 	Template   string `name:"template" usage:"template file"`
 	modTime    time.Time
 	domains    map[string]*text.Template
-	projects   map[string]*Project
-	queue      *util.Get[specifier, *Project]
+	projects   map[string]*Module
+	queue      *util.Get[specifier, *Module]
 }
 
 func (t *App) Init() error {
@@ -62,9 +62,9 @@ func (t *App) LoadProjects() error {
 		}
 		t.domains[domain] = tpl
 	}
-	t.projects = make(map[string]*Project)
-	for _, p := range config.Projects {
-		t.projects[p.Package] = p
+	t.projects = make(map[string]*Module)
+	for _, p := range config.Modules {
+		t.projects[p.Path] = p
 	}
 	return nil
 }
@@ -77,7 +77,7 @@ func (t *App) Configured() error {
 
 func (t *App) List() {
 	for _, p := range t.projects {
-		fmt.Println(p.Package)
+		fmt.Println(p.Path)
 	}
 }
 
@@ -86,7 +86,7 @@ type specifier struct {
 	Path string
 }
 
-func (t *App) GetProject(sp specifier) *Project {
+func (t *App) GetProject(sp specifier) *Module {
 	if t.Trace {
 		fmt.Printf("host=%s path=%s\n", sp.Host, sp.Path)
 	}
@@ -105,8 +105,8 @@ func (t *App) GetProject(sp specifier) *Project {
 		var buf bytes.Buffer
 		err := tpl.Execute(&buf, model)
 		if err == nil {
-			var p Project
-			p.Package = pkg
+			var p Module
+			p.Path = pkg
 			p.Repository = buf.String()
 			return &p
 		}
@@ -133,23 +133,20 @@ func (t *App) Handle(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	host := t.host(r)
-	pkg := host + url.Path
-
 	path := strings.TrimSuffix(url.Path, "/")
-	fmt.Println(pkg)
 	project := t.queue.Get(specifier{Host: host, Path: path})
 	if project == nil {
 		return fmt.Errorf("no such package: %s%s", host, path)
 	}
 	if t.Trace {
-		fmt.Printf("package=%s repository=%s\n", project.Package, project.Repository)
+		fmt.Printf("package=%s repository=%s\n", project.Path, project.Repository)
 	}
 	var tpl *template.Template
 	if t.Template != "" {
 		tpl, err = template.ParseFiles(t.Template)
 	} else {
-		tpl = template.New("project")
-		tpl, err = tpl.Parse(projectTemplate)
+		tpl = template.New("x")
+		tpl, err = tpl.Parse(defaultTemplate)
 	}
 	if err != nil {
 		return err
@@ -173,6 +170,6 @@ func (t *App) Server() error {
 }
 
 func (t *App) PrintTemplate() {
-	fmt.Println(len(projectTemplate))
-	fmt.Println(projectTemplate)
+	fmt.Println(len(defaultTemplate))
+	fmt.Println(defaultTemplate)
 }

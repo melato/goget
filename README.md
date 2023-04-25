@@ -16,19 +16,29 @@ go build goget.go
 
 
 ## Configuration
-You need to provide a list of modules in yaml format, like this:
+The server is configured by a yaml file that has two sections:
+
+### domains
+The domains section maps a whole domain to a location for packages of this domain.
+For example, the configuration file below maps melato.org/X to https://github.com/melato/X.git
 ```
-- package: melato.org/command
+domains:
+	melato.org: "https://github.com/melato/{{.path}}.git"
+```
+The domains configuration is used if the module path is not found in the modules section, described below.
+
+### modules
+```
+modules:
+- path: melato.org/command
   repository: https://github.com/melato/command.git
-- package: melato.org/goget
+- path: melato.org/goget
   repository: https://github.com/melato/goget.git
 ```
 
-"package" is really the module name.
-
 Then run the server:
 ```
-goget -port 8080 -f {modules.yaml} server
+goget -port 8080 -c {config.yaml} server
 ```
 
 This provides http service on port 8080.
@@ -50,10 +60,10 @@ To use https (TLS) on port 443, put it behind a reverse http proxy.
 </html>
 
 ```
-You can specify a different HTML than the default, with the -template flag.
+You can specify a different HTML template, using the -template flag.
 
 
-# How go finds modules
+# How Go finds modules
 	
 Suppose you have the following Go program, main.go:
 ```
@@ -86,7 +96,7 @@ The important information is in the html head section:
 <meta name="go-import" content="gopkg.in/yaml.v2 git https://gopkg.in/yaml.v2">
 ```
 
-This program allows you to do the same with package that use your own domain.
+This program allows you to do the same with packages that use your own domain.
 	
 ## Notes
 - This web server ignores the go-get=1 parameter.  It produces the same output with or without it.
@@ -104,7 +114,7 @@ There are pros and cons when you use your own domain and/or go-get server.
 
 ### Cons
 - If your server goes down or your domain disappears, your module will not be as easily accessible.
-But hey, anyone can configure their own go-get server to point to the code,
+But anyone can configure their own go-get server to point to the code,
 point your dead domain to their go-get server and use your code as before.
 - Potential users of your module might not trust your domain.
 - If your domain expires and someone else gets it, they can lie to the world about where the source code is.
@@ -112,10 +122,7 @@ That is a danger with much of open source software.
 
 In all these cases, someone can bypass your go-get server and get your module directly from the code hosting service.
 Someone can then use it from their disk by specifying its location in the "replace" section of their go.mod file.		
-Then go will not try to get information from your domain.
-
-If you don't trust the domain, why would you use the code without even looking at it?
-The use of code blindly is a security vulnerability.
+Then Go will not try to get information from your domain.
 
 
 ## Hosting Private modules

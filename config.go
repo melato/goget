@@ -2,10 +2,10 @@ package goget
 
 type Config struct {
 	Domains  map[string]string
-	Projects []*Project
+	Modules []*Module
 }
 
-type Project struct {
-	Package    string `yaml:"package"`
+type Module struct {
+	Path    string `yaml:"package"`
 	Repository string `yaml:"repository"`
 }
