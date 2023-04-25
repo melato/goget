@@ -9,6 +9,6 @@
 <div>module:  {{.Path}}</div>
 <div>repository: {{.Repository}}</div>
 <br>
-<div>go uses the information in the &lt;head&gt; section of this document</div>
+<div>Go uses the information in the &lt;head&gt; section of this document</div>
 </body>
 </html>

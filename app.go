@@ -55,7 +55,7 @@ func (t *App) LoadProjects() error {
 	}
 	t.domains = make(map[string]*text.Template)
 	for domain, pattern := range config.Domains {
-		tpl := text.New("x")
+		tpl := text.New("x").Option("missingkey=error")
 		tpl, err = tpl.Parse(pattern)
 		if err != nil {
 			return fmt.Errorf("%s: %w", domain, err)
@@ -151,7 +151,13 @@ func (t *App) Handle(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	return tpl.Execute(w, project)
+	tpl.Option("missingkey=error")
+	var buf bytes.Buffer
+	err = tpl.Execute(&buf, project)
+	if err == nil {
+		buf.WriteTo(w)
+	}
+	return err
 }
 
 func (t *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
