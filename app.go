@@ -77,7 +77,7 @@ func (t *App) Configured() error {
 
 func (t *App) List() {
 	for _, p := range t.projects {
-		fmt.Println(p.Path)
+		fmt.Printf("%s %s\n", p.Path, p.Repository)
 	}
 }
 

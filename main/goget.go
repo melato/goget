@@ -12,8 +12,7 @@ import (
 //go:embed usage.yaml
 var usageData []byte
 
-//go:embed version
-var version string
+var version string = "dev"
 
 func main() {
 	cmd := &command.SimpleCommand{}

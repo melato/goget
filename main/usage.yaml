@@ -7,5 +7,12 @@ long: |
 commands:
   server:
     short: run the web server
+  list:
+    short: list packages
+    long: |
+      Lists individual packages from the configuration.
+      Does not use use domain configuration.
+  template:
+    short: print the template used for the output
   version:
     short: print program version
