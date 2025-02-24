@@ -18,3 +18,13 @@ list:     list packages
 template: print the template used for the output
 
 version:  print program version
+
+Options:
+  -c string
+    	config file (.yaml)
+  -port int
+    	port to listen to (default 8080)
+  -template string
+    	template file
+  -h 
+    display this message

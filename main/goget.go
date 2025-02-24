@@ -17,17 +17,21 @@ var version string = "dev"
 
 func mainE() error {
 	var app goget.App
+	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	var help bool
-	flag.BoolVar(&help, "h", false, "help")
-	flag.IntVar(&app.Port, "port", 8080, "port to listen to")
-	flag.StringVar(&app.ConfigFile, "c", "", "config file (.yaml)")
-	flag.StringVar(&app.Template, "template", "", "template file")
-	flag.Parse()
+	fs.BoolVar(&help, "h", false, "help")
+	fs.IntVar(&app.Port, "port", 8080, "port to listen to")
+	fs.StringVar(&app.ConfigFile, "c", "", "config file (.yaml)")
+	fs.StringVar(&app.Template, "template", "", "template file")
+	err := fs.Parse(os.Args[1:])
+	if err != nil {
+		return err
+	}
 	if help {
 		fmt.Printf("%s\n", usageData)
 		return nil
 	}
-	args := flag.Args()
+	args := fs.Args()
 	if len(args) == 0 {
 		return nil
 	}
@@ -36,7 +40,7 @@ func mainE() error {
 		fmt.Printf("%s\n", version)
 		return nil
 	}
-	err := app.Configured()
+	err = app.Configured()
 	if err != nil {
 		return err
 	}
