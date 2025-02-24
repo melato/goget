@@ -3,25 +3,58 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"os"
 
-	"melato.org/command"
-	"melato.org/command/usage"
+	"flag"
+
 	"melato.org/goget"
 )
 
-//go:embed usage.yaml
+//go:embed usage.txt
 var usageData []byte
 
 var version string = "dev"
 
+func mainE() error {
+	var app goget.App
+	var help bool
+	flag.BoolVar(&help, "h", false, "help")
+	flag.IntVar(&app.Port, "port", 8080, "port to listen to")
+	flag.StringVar(&app.ConfigFile, "c", "", "config file (.yaml)")
+	flag.StringVar(&app.Template, "template", "", "template file")
+	flag.Parse()
+	if help {
+		fmt.Printf("%s\n", usageData)
+		return nil
+	}
+	args := flag.Args()
+	if len(args) == 0 {
+		return nil
+	}
+	cmd := args[0]
+	if cmd == "version" {
+		fmt.Printf("%s\n", version)
+		return nil
+	}
+	err := app.Configured()
+	if err != nil {
+		return err
+	}
+	switch cmd {
+	case "server":
+		return app.Server()
+	case "list":
+		app.List()
+	case "template":
+		app.PrintTemplate()
+	}
+	return nil
+}
+
 func main() {
-	cmd := &command.SimpleCommand{}
-	app := &goget.App{}
-	cmd.Flags(app)
-	cmd.Command("list").RunFunc(app.List)
-	cmd.Command("server").RunFunc(app.Server)
-	cmd.Command("template").NoConfig().RunMethod(app.PrintTemplate)
-	cmd.Command("version").NoConfig().RunMethod(func() { fmt.Println(version) }).Short("print program version")
-	usage.Apply(cmd, usageData)
-	command.Main(cmd)
+	err := mainE()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
 }

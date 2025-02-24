@@ -1,0 +1,20 @@
+simple go-get server
+
+Implements an HTTP server that provides information about the location of
+git repositories for git packages.
+This allows creating public Go packages with a domain,
+which are hosted on another domain (such as github.com).
+
+usage: goget [options] <command>
+
+Commands:
+
+server:   run the web server
+
+list:     list packages
+          Lists individual packages from the configuration.
+          Does not use use domain configuration.
+
+template: print the template used for the output
+
+version:  print program version

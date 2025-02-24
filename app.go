@@ -26,11 +26,6 @@ type App struct {
 	projects   map[string]*Module
 }
 
-func (t *App) Init() error {
-	t.Port = 8080
-	return nil
-}
-
 func (t *App) LoadProjects() error {
 	data, err := os.ReadFile(t.ConfigFile)
 	if err != nil {
