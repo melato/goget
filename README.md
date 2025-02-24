@@ -44,7 +44,7 @@ For more detailed configuration, you can specify individual modules:
 }
 ```
 
-## Running
+# Running
 
 Run the server:
 ```
@@ -112,10 +112,10 @@ On the other hand, hosting your own go-get server has the following disadvantage
 
 These are risks with much of open source software.
 
-# Mitigation
+## Mitigation
 I don't know all the ways by which you can protect yourself from using Go from unknown locations.  The following mitigations below are problematic.
 
-## Use code locally
+### Use code locally
 You can bypass the go-get server and get the module directly from the code hosting service. 
 You can then use it locally, by specifying its location in the "replace" section of their go.mod file.
 Then Go will not try to get information from the internet.
@@ -124,7 +124,7 @@ This the simplest and safest mitigation, that can be used even with Go standard 
 
 The major disadvantage is that you have to modify each go.mod file.
 
-## Use your own go-get server
+### Use your own go-get server
 You could potentially configure your own go-get server to point to code, instead of relying on someone else's domain.  Unfortunately, this is not so easy because:
 - You need a TLS certificate for the module's domain.
 - You need to host this code somewhere accessible via https.
