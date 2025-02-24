@@ -36,8 +36,12 @@ func mainE() error {
 		return nil
 	}
 	cmd := args[0]
-	if cmd == "version" {
+	switch cmd {
+	case "version":
 		fmt.Printf("%s\n", version)
+		return nil
+	case "template":
+		app.PrintTemplate()
 		return nil
 	}
 	err = app.Configured()
@@ -49,8 +53,6 @@ func mainE() error {
 		return app.Server()
 	case "list":
 		app.List()
-	case "template":
-		app.PrintTemplate()
 	}
 	return nil
 }

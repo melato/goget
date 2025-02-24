@@ -1,11 +1,11 @@
 package goget
 
 type Config struct {
-	Domains map[string]string `yaml:"domains"`
-	Modules []*Module         `yaml:"modules"`
+	Domains map[string]string `json:"domains"`
+	Modules []*Module         `json:"modules"`
 }
 
 type Module struct {
-	Path       string `yaml:"package"`
-	Repository string `yaml:"repository"`
+	Path       string `json:"package"`
+	Repository string `json:"repository"`
 }

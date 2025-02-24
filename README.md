@@ -4,63 +4,60 @@ Implements an HTTP server that provides information about the location of
 git repositories for go modules.
 
 This allows you to publish Go modules using your own domain in the import path,
-unrelated to the domain where the source code is hosted.
+separate from the domain where the source code is hosted.
 
-## Compiling
+# Compiling
+goget has no dependencies.
 ```
 git clone https://github.com/melato/goget.git
 cd goget/main
-date > version
 go build goget.go
 ```
 
 
-## Configuration
-The server is configured by a yaml file that has two sections:
+# Configuration
+The server is configured by a JSON file that has two sections:
 
-### domains
+## domains
 The domains section maps a whole domain to a location for packages of this domain.
-For example, the configuration file below maps melato.org/X to https://github.com/melato/X.git
-```
-domains:
-	melato.org: "https://github.com/melato/{{.path}}.git"
-```
-The domains configuration is used if the module path is not found in the modules section, described below.
 
-### modules
+The configuration file below maps melato.org/M to https://github.com/melato/M.git
 ```
-modules:
-- path: melato.org/command
-  repository: https://github.com/melato/command.git
-- path: melato.org/goget
-  repository: https://github.com/melato/goget.git
+{
+  "domains": {
+     "melato.org": "https://github.com/melato/{{.path}}.git"
+  }
+}
 ```
 
-Then run the server:
+## modules
+For more detailed configuration, you can specify individual modules:
+
 ```
-goget -port 8080 -c {config.yaml} server
+{
+ "modules": [
+  {
+   "package": "melato.org/command",
+   "repository": "https://github.com/melato/command.git"
+  }
+ ]
+}
+```
+
+## Running
+
+Run the server:
+```
+goget -port 8080 -c {config.json} server
 ```
 
 This provides http service on port 8080.
 To use https (TLS) on port 443, put it behind a reverse http proxy.
 
-
-# Example Generated html
-```
-<!DOCTYPE html>
-<html>
-<head>
-<title>melato.org/command</title>
-<meta name="go-import" content="melato.org/command git https://github.com/melato/command.git">
-</head>
-<body>
-<div>module: melato.org/command</div>
-<div>repository: https://github.com/melato/command.git</div>
-</body>
-</html>
-
-```
-You can specify a different HTML template, using the -template flag.
+## Notes
+- This web server ignores the go-get=1 parameter.  It produces the same output with or without it.
+- Package names are matched exactly.  Nothing special is done for subpackages or versions.
+- The response body is for humans to read.  The machine-readable information is in the "head" section.
 
 
 # How Go finds modules
@@ -98,39 +95,44 @@ The important information is in the html head section:
 
 This program allows you to do the same with packages that use your own domain.
 	
-## Notes
-- This web server ignores the go-get=1 parameter.  It produces the same output with or without it.
-- Package names are matched exactly.  Nothing special is done for subpackages or versions.
-- The response body is for humans to read.  The machine-readable information is in the "head" section.
+# Pros 
+By using your own domain and/or go-get server.
 
-## Pros and Cons
-
-There are pros and cons when you use your own domain and/or go-get server.
-### Pros 
-- Your modules are automatically grouped in the import section.
 - You use your own domain/brand in your code, instead of using someone else's brand.
 - You can move your code to a different code hosting service and it will work just the same.
+- Your modules are automatically grouped in the import section, by your domain.
 
 
-### Cons
-- If your server goes down or your domain disappears, your module will not be as easily accessible.
-But anyone can configure their own go-get server to point to the code,
-point your dead domain to their go-get server and use your code as before.
+# Cons
+On the other hand, hosting your own go-get server has the following disadvantages:
+
 - Potential users of your module might not trust your domain.
+- If your server goes down or your domain expires, your module will not be easily accessible.
 - If your domain expires and someone else gets it, they can lie to the world about where the source code is.
-That is a danger with much of open source software.
 
-In all these cases, someone can bypass your go-get server and get your module directly from the code hosting service.
-Someone can then use it from their disk by specifying its location in the "replace" section of their go.mod file.		
-Then Go will not try to get information from your domain.
+These are risks with much of open source software.
 
+# Mitigation
+I don't know all the ways by which you can protect yourself from using Go from unknown locations.  The following mitigations below are problematic.
 
-## Hosting Private modules
-I don't know if you can use your own go-get server to make it easier to use your private modules.yaml
+## Use code locally
+You can bypass the go-get server and get the module directly from the code hosting service. 
+You can then use it locally, by specifying its location in the "replace" section of their go.mod file.
+Then Go will not try to get information from the internet.
+
+This the simplest and safest mitigation, that can be used even with Go standard library modules. 
+
+The major disadvantage is that you have to modify each go.mod file.
+
+## Use your own go-get server
+You could potentially configure your own go-get server to point to code, instead of relying on someone else's domain.  Unfortunately, this is not so easy because:
+- You need a TLS certificate for the module's domain.
+- You need to host this code somewhere accessible via https.
+- Go may use cached information about Go modules, from Google's servers.
+
+# Hosting Private modules
+I don't know if you can use your own go-get server to make it easier to use your private modules.
+
 I would have liked to be able to return a repository location like: git:mymodule, but this doesn't work.
-If the code is accessible via https, then it could work.  Be careful not to leak secret urls to the world.
-A GOPROXY server may help.
 
-## GOPROXY
-The GOPROXY functionality used by go tools is related to go-get.
-
+A goproxy server might be the solution.  This is beyond the scope of goget.

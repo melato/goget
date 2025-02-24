@@ -3,6 +3,7 @@ package goget
 import (
 	"bytes"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -10,8 +11,6 @@ import (
 	"os"
 	"strings"
 	text "text/template"
-
-	"gopkg.in/yaml.v2"
 )
 
 //go:embed view/module.tpl
@@ -19,9 +18,9 @@ var defaultTemplate string
 
 type App struct {
 	Trace      bool
-	Port       int    `name :"port" usage:"port to listen to"`
-	ConfigFile string `name:"c" usage:"config file (.yaml)"`
-	Template   string `name:"template" usage:"template file"`
+	Port       int
+	ConfigFile string
+	Template   string
 	domains    map[string]*text.Template
 	projects   map[string]*Module
 }
@@ -32,7 +31,7 @@ func (t *App) LoadProjects() error {
 		return err
 	}
 	var config Config
-	err = yaml.Unmarshal(data, &config)
+	err = json.Unmarshal(data, &config)
 	if err != nil {
 		return err
 	}
@@ -152,11 +151,10 @@ func (t *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (t *App) Server() error {
 	addr := fmt.Sprintf(":%d", t.Port)
-	fmt.Println(addr)
+	fmt.Printf("Starting http server on %s\n", addr)
 	return http.ListenAndServe(addr, t)
 }
 
 func (t *App) PrintTemplate() {
-	fmt.Println(len(defaultTemplate))
 	fmt.Println(defaultTemplate)
 }

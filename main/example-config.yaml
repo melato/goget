@@ -1,5 +1,0 @@
-domains:
-    melato.org: "https://github.com/melato/{{.path}}.git"
-modules:
-- package: melato.org/command
-  repository: https://github.com/melato/command.git

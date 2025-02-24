@@ -1,0 +1,8 @@
+{
+ "modules": [
+  {
+   "package": "melato.org/command",
+   "repository": "https://github.com/melato/command.git"
+  }
+ ]
+}

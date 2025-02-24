@@ -1,0 +1,5 @@
+{
+  "domains": {
+     "melato.org": "https://github.com/melato/{{.path}}.git"
+  }
+}

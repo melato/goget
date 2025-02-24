@@ -15,7 +15,8 @@ list:     list packages
           Lists individual packages from the configuration.
           Does not use use domain configuration.
 
-template: print the template used for the output
+template: print the default output template
+          This is provided so you can easily adapt it to create your own.
 
 version:  print program version
 
