@@ -10,10 +10,8 @@ import (
 	"os"
 	"strings"
 	text "text/template"
-	"time"
 
 	"gopkg.in/yaml.v2"
-	"melato.org/goget/util"
 )
 
 //go:embed view/module.tpl
@@ -24,10 +22,8 @@ type App struct {
 	Port       int    `name :"port" usage:"port to listen to"`
 	ConfigFile string `name:"c" usage:"config file (.yaml)"`
 	Template   string `name:"template" usage:"template file"`
-	modTime    time.Time
 	domains    map[string]*text.Template
 	projects   map[string]*Module
-	queue      *util.Get[specifier, *Module]
 }
 
 func (t *App) Init() error {
@@ -36,14 +32,6 @@ func (t *App) Init() error {
 }
 
 func (t *App) LoadProjects() error {
-	st, err := os.Stat(t.ConfigFile)
-	if err != nil {
-		return err
-	}
-	modTime := st.ModTime()
-	if !modTime.After(t.modTime) {
-		return nil
-	}
 	data, err := os.ReadFile(t.ConfigFile)
 	if err != nil {
 		return err
@@ -70,9 +58,10 @@ func (t *App) LoadProjects() error {
 }
 
 func (t *App) Configured() error {
-	t.queue = util.NewGet(t.GetProject)
-	err := t.LoadProjects()
-	return err
+	if t.ConfigFile == "" {
+		return fmt.Errorf("missing config file")
+	}
+	return t.LoadProjects()
 }
 
 func (t *App) List() {
@@ -89,9 +78,6 @@ type specifier struct {
 func (t *App) GetProject(sp specifier) *Module {
 	if t.Trace {
 		fmt.Printf("host=%s path=%s\n", sp.Host, sp.Path)
-	}
-	if t.LoadProjects() != nil {
-		return nil
 	}
 	pkg := sp.Host + sp.Path
 	p, ok := t.projects[pkg]
@@ -134,7 +120,7 @@ func (t *App) Handle(w http.ResponseWriter, r *http.Request) error {
 	}
 	host := t.host(r)
 	path := strings.TrimSuffix(url.Path, "/")
-	project := t.queue.Get(specifier{Host: host, Path: path})
+	project := t.GetProject(specifier{Host: host, Path: path})
 	if project == nil {
 		return fmt.Errorf("no such package: %s%s", host, path)
 	}
